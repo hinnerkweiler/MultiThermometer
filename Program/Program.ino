@@ -9,10 +9,11 @@
 //Sensor-Identification
 const char* sensorId = "Wohnzimmer";
 
-#define ONE_WIRE_BUS 4  // The pin the DS18B20s are connected on
+#define ONE_WIRE_BUS 18  // The pin the DS18B20s are connected on
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
+#define LED_PIN 2  // Define the LED pin (commonly GPIO 2)
 
 // WiFi and API configuration
 const char* ssid = WIFI_SSID;
@@ -22,14 +23,19 @@ const char* serverCertificate = SERVER_CA_PEM_FILE;
 
 // Deep sleep interval (e.g., 10 minutes)
 const uint64_t uS_TO_S_FACTOR = 1000000;  // Conversion factor for micro seconds to seconds
-const uint64_t TIME_TO_SLEEP = 10;  // Time ESP32 will go to sleep (in seconds)
+const uint64_t TIME_TO_SLEEP = 10 * 60;  // Time ESP32 will go to sleep (in seconds) 
 
 void setup() {
   Serial.begin(115200);
-  
+  pinMode(LED_PIN, OUTPUT); // Initialize the LED pin as an output
+
   // Warm up Sensors
   sensors.begin();
-
+  digitalWrite(LED_PIN, HIGH); // Turn the LED on
+  
+  Serial.print("Sensors: ");
+  Serial.println(sensors.getDeviceCount());
+ 
   //connect to WiFi
   connectToWiFi();
 
@@ -39,12 +45,14 @@ void setup() {
   for (int i = 0; i < sensors.getDeviceCount(); i++) 
   {
     DeviceAddress sensorAddress;
+    sensors.getAddress(sensorAddress, i);
     float temperature = readTemperature(i);
     sendDataToAPI(temperature, sensorAddress);
   }
   
 
   // Enter deep sleep
+  digitalWrite(LED_PIN, LOW); // Turn the LED on
   goToDeepSleep();
 }
 
